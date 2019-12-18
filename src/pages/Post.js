@@ -3,7 +3,7 @@ import { View, SafeAreaView, StyleSheet, FlatList, ActivityIndicator, Text, Stat
 import PostInput from "./../components/PostInput";
 import * as firebase from "firebase";
 const PostCard = lazy(() => import("./../components/PostCard"));
-
+import DumyPostCard from "./../components/DumyPostCard";
 export default class Post extends Component {
 
   state = {
@@ -99,7 +99,7 @@ export default class Post extends Component {
               <PostInput
                 onPost={this.onPost} />}
             renderItem={(data) => (
-              <Suspense fallback={<ActivityIndicator size="large"></ActivityIndicator>}>
+              <Suspense fallback={<DumyPostCard />}>
                 <PostCard data={data} />
               </Suspense>
 
