@@ -1,5 +1,5 @@
 import React, { Component, Suspense, lazy } from 'react';
-import { View, SafeAreaView, StyleSheet, FlatList, ActivityIndicator, Text, StatusBar } from 'react-native';
+import { View, SafeAreaView, StyleSheet, FlatList, RefreshControl, StatusBar } from 'react-native';
 import PostInput from "./../components/PostInput";
 import * as firebase from "firebase";
 const PostCard = lazy(() => import("./../components/PostCard"));
@@ -10,7 +10,8 @@ export default class Post extends Component {
     email: "",
     uid: "",
     displayName: "",
-    allPost: []
+    allPost: [],
+    refreshing: false
   }
 
   UNSAFE_componentWillMount = () => {
@@ -18,7 +19,7 @@ export default class Post extends Component {
     this.setState({ email, displayName, uid });
   }
 
-  componentDidMount = () => {
+  getAllpost =()=>{
     let allPost = [];
     firebase.database().ref(`users/${JSON.stringify(this.state.uid)}/friends/`)
       .once('value')
@@ -51,9 +52,13 @@ export default class Post extends Component {
             var dateA = new Date(a.date), dateB = new Date(b.date);
             return dateB - dateA;
           });
-          this.setState({ allPost: data })
+          this.setState({ allPost: data,refreshing: false })
         })
       })
+  }
+
+  componentDidMount = () => {
+   this.getAllpost();
   }
 
   onPost = (postText) => {
@@ -87,6 +92,10 @@ export default class Post extends Component {
       })
   }
 
+  checkIncoming = ()=>
+  {
+    this.getAllpost();
+  }
 
   render() {
     return (
@@ -94,6 +103,10 @@ export default class Post extends Component {
         <StatusBar backgroundColor="#3D61A7" barStyle="light-content" />
         <SafeAreaView style={styles.container}>
           <FlatList
+            refreshControl={<RefreshControl 
+            refreshing={this.state.refreshing} 
+            onRefresh = {this.checkIncoming}
+            />}
             data={this.state.allPost}
             ListHeaderComponent={
               <PostInput

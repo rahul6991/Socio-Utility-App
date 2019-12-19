@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { SafeAreaView, StyleSheet, FlatList, Text, View, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
 import * as firebase from "firebase";
 import SearchBar from './../components/SearchBar';
 import RequestHeading from './../components/RequestHeading';
@@ -14,22 +14,25 @@ export default class Friends extends Component {
     uid: "",
     displayName: "",
     requestTo: [],
-    request: []
+    request: [],
+    refresh: false
   }
 
   componentDidMount = () => {
     const { email, displayName, uid } = firebase.auth().currentUser;
     this.setState({ email, displayName, uid });
     this.cancelRequest();
-    firebase.database().ref(`users/${JSON.stringify(uid)}/friends/`)
-      .once('value')
-      .then(result => {
-        result = result.val();
-        result = result.filter(v => v.status == 'new');
-        this.setState({ request: result })
-      }).catch(err => {
-        Alert.alert("Network issue");
-      })
+    this.getFriendRequest();
+  }
+
+  getFriendRequest = ()=>{
+    firebase.database().ref(`users/${JSON.stringify(this.state.uid)}/friends/`)
+    .once('value')
+    .then(result => {
+      result = result.val();
+      result = result.filter(v => v.status == 'new');
+      this.setState({ request: result, refresh: false })
+    })
   }
 
   requestFriendShip = () => {
@@ -176,6 +179,10 @@ export default class Friends extends Component {
       })
   }
 
+  checkIncomingRequest = ()=>{
+    this.getFriendRequest();
+  }
+
   render() {
     return (
       <SafeAreaView style={styles.container}>
@@ -186,6 +193,10 @@ export default class Friends extends Component {
           onConfirm={() => { this.requestFriendShip() }}
           onCancel={() => { this.cancelRequest() }} />
         <FlatList
+          refreshControl={<RefreshControl 
+            refreshing={this.state.refresh} 
+            onRefresh = {this.checkIncomingRequest}
+            />}
           data={this.state.request}
           ListHeaderComponent={<RequestHeading />}
           stickyHeaderIndices={[0]}
